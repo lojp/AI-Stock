@@ -2,7 +2,7 @@
 """
 Created on Sep 01 09:37:17 2017
 
-@author: jluo27
+@author: lojp
 """
 
 import os
