@@ -18,4 +18,4 @@ https://www.qixin.com/related/428d1493-9584-422d-8f45-11e0b17e06c6?section=inves
 8, 裁判文书 \
 https://wenshu.court.gov.cn/ \
 9, 看准网 \
-https://www.kanzhun.com/
+https://m.kanzhun.com/wap/search \
