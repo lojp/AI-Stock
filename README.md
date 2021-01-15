@@ -19,3 +19,5 @@ https://www.qixin.com/related/428d1493-9584-422d-8f45-11e0b17e06c6?section=inves
 https://wenshu.court.gov.cn/ \
 9, 看准网 \
 https://m.kanzhun.com/wap/search \
+10, 百度指数 \
+http://index.baidu.com/v2/index.html#/ 
