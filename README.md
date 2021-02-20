@@ -27,13 +27,13 @@ https://www.tdx.com.cn/article/alldata.html \
 https://pytdx-docs.readthedocs.io/zh_CN/latest/pytdx_reader/ 
 
 ```
-\import os 
-\from pytdx.reader import TdxMinBarReader, TdxFileNotFoundException 
-\mypath = 'C:\\new_tdx\\vipdoc\\5fz\\' 
-\os.chdir(mypath) 
-\reader = TdxMinBarReader() 
-\df = reader.get_df("sh600876.5") 
-\print(df)
+import os 
+from pytdx.reader import TdxMinBarReader, TdxFileNotFoundException 
+mypath = 'C:\\new_tdx\\vipdoc\\5fz\\' 
+os.chdir(mypath) 
+reader = TdxMinBarReader() 
+df = reader.get_df("sh600876.5") 
+print(df)
 ```
 
 12, 利用通达信软件导出所有股票历史行情 \
