@@ -35,6 +35,10 @@ reader = TdxMinBarReader()
 df = reader.get_df("sh600876.5") 
 print(df)
 ```
+```
+if(len(df)>10):  #计算每只股票 10天以来的涨跌幅（大约2周）
+        df['close2']  = df['close'].shift(10)
+```
 
 12, 利用通达信软件导出所有股票历史行情 \
 https://my.oschina.net/huhaicool/blog/3010947 
