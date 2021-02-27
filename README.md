@@ -25,6 +25,8 @@ http://index.baidu.com/v2/index.html# \
 https://www.tdx.com.cn/article/alldata.html \
 可以使用pytdx打开，具体参考一下：\
 https://pytdx-docs.readthedocs.io/zh_CN/latest/pytdx_reader/ 
+12, 利用通达信软件导出所有股票历史行情 \
+https://my.oschina.net/huhaicool/blog/3010947 
 
 ```
 import os 
@@ -40,7 +42,58 @@ if(len(df)>10):  #计算每只股票 10天以来的涨跌幅（大约2周）
         df['close2']  = df['close'].shift(10)
 ```
 
-12, 利用通达信软件导出所有股票历史行情 \
-https://my.oschina.net/huhaicool/blog/3010947 
+```
+import pandas as pd
+import tushare as ts
+import os
+import numpy as np
+import operator
+import time
+import datetime
+from dateutil.relativedelta import relativedelta
 
+today = datetime.datetime.now().strftime('%Y%m%d')
+today_ymd = datetime.datetime.now().strftime('%Y-%m-%d')
+t = datetime.datetime.strptime(today,'%Y%m%d').date()
+yesterday = (t-relativedelta(days=1)).strftime('%Y%m%d')
+yesterday_ymd = (t-relativedelta(days=1)).strftime('%Y-%m-%d')
+tomorrow_ymd = (t+relativedelta(days=1)).strftime('%Y-%m-%d')
 
+TOKEN = ''
+ts.set_token(TOKEN)
+pro = ts.pro_api()
+
+data = pro.daily(trade_date=yesterday)
+data['code'] = data['ts_code'].str.split('.').str[0]
+data_3 = data[(data['high'] > data['pre_close']*1.093)& (data['open'] < data['close']) & (data['open'] < data['pre_close']*1.07) ]
+
+# # # 0ts_code,1trade_date,2open,3high,4low,5close,6pre_close,7change,8pct_chg,9vol,10amount
+# print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
+
+code_list = data_3['code'].tolist()
+a=[]
+for i in range(len(code_list)):
+    if i >= len(code_list):
+        break
+    try:
+        code = code_list[i]
+        highvalue = float(data_3[data_3['code']==code]['high'])
+        df = ts.get_hist_data(code, ktype='5', start=yesterday_ymd, end=today_ymd)
+        df['time'] = pd.to_datetime(df.index)
+        df_group = df.nlargest(2,'volume',keep='first')
+        df_group_max = float(df_group['high'].max())
+        diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
+        open1 =float(df_group.iloc[:1]['open'])
+        open2 =float(df_group.iloc[-1:]['open'])
+        close1=float(df_group.iloc[:1]['close'])
+        close2=float(df_group.iloc[-1:]['close'])
+        
+        if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
+            code_list.pop(i)        
+        else:
+            a.append(code_list[i])
+    except:
+        pass    
+
+print(a)
+```
