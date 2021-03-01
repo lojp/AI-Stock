@@ -52,18 +52,29 @@ import time
 import datetime
 from dateutil.relativedelta import relativedelta
 
-today = datetime.datetime.now().strftime('%Y%m%d')
-today_ymd = datetime.datetime.now().strftime('%Y-%m-%d')
+mypath = 'C:\\MyData\\Previous Analysis\\stock\\data\\'
+os.chdir(mypath)
+
+calendar_df = pd.read_hdf('calendar.h5', key='s')
+
+date_df = pd.to_datetime(calendar_df.tail(2)['cal_date'], format = '%Y%m%d')
+today = date_df.max().strftime('%Y%m%d')
+today_ymd = date_df.max().strftime('%Y-%m-%d')
 t = datetime.datetime.strptime(today,'%Y%m%d').date()
-yesterday = (t-relativedelta(days=1)).strftime('%Y%m%d')
-yesterday_ymd = (t-relativedelta(days=1)).strftime('%Y-%m-%d')
+yesterday = date_df.min().strftime('%Y%m%d')
+yesterday_ymd = date_df.min().strftime('%Y-%m-%d')
 tomorrow_ymd = (t+relativedelta(days=1)).strftime('%Y-%m-%d')
 
-TOKEN = ''
+TOKEN = '0c98ac2886e4331d7120a91573d3d025ba2eec7c96bfac77f9b7153d'
 ts.set_token(TOKEN)
 pro = ts.pro_api()
+cons = ts.get_apis()
 
-data = pro.daily(trade_date=yesterday)
+df_tscode = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
+
+# jihe_df = ts.tick('002316', conn=cons, date=today_ymd)
+
+data = pro.daily(trade_date=today)
 data['code'] = data['ts_code'].str.split('.').str[0]
 data_3 = data[(data['high'] > data['pre_close']*1.093)& (data['open'] < data['close']) & (data['open'] < data['pre_close']*1.07) ]
 
@@ -78,7 +89,7 @@ for i in range(len(code_list)):
     try:
         code = code_list[i]
         highvalue = float(data_3[data_3['code']==code]['high'])
-        df = ts.get_hist_data(code, ktype='5', start=yesterday_ymd, end=today_ymd)
+        df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
         df['time'] = pd.to_datetime(df.index)
         df_group = df.nlargest(2,'volume',keep='first')
         df_group_max = float(df_group['high'].max())
@@ -95,5 +106,8 @@ for i in range(len(code_list)):
     except:
         pass    
 
-print(a)
+
+df_final = df_tscode[df_tscode['symbol'].isin(a)]
+ts.close_apis(cons)
+print(df_final)
 ```
