@@ -53,7 +53,7 @@ import datetime
 import baostock as bs
 from dateutil.relativedelta import relativedelta
 
-mypath = 'C:\\MyData\\Previous Analysis\\stock\\data\\'
+mypath = 'C:\\MyData\\Previous Analysis\\stock\\minsline\\'
 os.chdir(mypath)
 
 calendar_df = pd.read_hdf('calendar.h5', key='s')
@@ -83,81 +83,21 @@ data_3 = data[(data['high'] > data['pre_close']*1.093)& (data['open'] < data['cl
 print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
 
 
-code_list = data_3['code'].tolist()
-a=[]
-lg = bs.login()
-for i in range(len(code_list)):
-    if i >= len(code_list):
-        break
-    try:
-        code = code_list[i]
-        highvalue = float(data_3[data_3['code']==code]['high'])        
-        bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
-        rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
-        df = rs.get_data()     #获取股票5分钟数据
-        df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-        df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
-        df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
-        df_group = df.nlargest(2,'volume',keep='first')
-        df_group_max = float(df_group['high'].max())
-        diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
-        open1 =float(df_group.iloc[:1]['open'])
-        open2 =float(df_group.iloc[-1:]['open'])
-        close1=float(df_group.iloc[:1]['close'])
-        close2=float(df_group.iloc[-1:]['close'])
-        
-        if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            code_list.pop(i)        
-        else:
-            a.append(code_list[i])
-    except:
-        pass    
-bs.logout()
-
-# code_list = data_3['code'].tolist()  # 获取股票代码列表
-# a=[]
-# bs.login()  # 初始化baostock
-# for code in code_list:
-    # max_try = 8  # 失败重连的最大次数
-    # bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
-    # for tries in range(max_try):
-        # rs = bs.query_history_k_data_plus(bs_code, "time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
-        # if rs.error_code == '0':
-            # try:
-                # df = rs.get_data()     #获取股票5分钟数据
-                # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-                # df_group = df.nlargest(2,'volume',keep='first')
-                # df_group_max = float(df_group['high'].max())
-                # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
-                # open1 =float(df_group.iloc[:1]['open'])
-                # open2 =float(df_group.iloc[-1:]['open'])
-                # close1=float(df_group.iloc[:1]['close'])
-                # close2=float(df_group.iloc[-1:]['close'])
-                # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-                    # code_list.pop(i)        
-                # else:
-                    # a.append(code_list[i])
-            # except:
-                # pass    
-            # break
-        # elif tries < (max_try - 1):
-            # sleep(2)
-            # continue
-        # else:
-            # continue
-
-# bs.logout()
-
 # code_list = data_3['code'].tolist()
 # a=[]
+# lg = bs.login()
 # for i in range(len(code_list)):
     # if i >= len(code_list):
         # break
     # try:
         # code = code_list[i]
-        # highvalue = float(data_3[data_3['code']==code]['high'])
-        # df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
-        # df['time'] = pd.to_datetime(df.index)
+        # highvalue = float(data_3[data_3['code']==code]['high'])        
+        # bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
+        # rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
+        # df = rs.get_data()     #获取股票5分钟数据
+        # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
+        # df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
+        # df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
         # df_group = df.nlargest(2,'volume',keep='first')
         # df_group_max = float(df_group['high'].max())
         # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
@@ -172,10 +112,39 @@ bs.logout()
             # a.append(code_list[i])
     # except:
         # pass    
+# bs.logout()
+
+
+
+code_list = data_3['code'].tolist()
+a=[]
+for i in range(len(code_list)):
+    if i >= len(code_list):
+        break
+    try:
+        code = code_list[i]
+        highvalue = float(data_3[data_3['code']==code]['high'])
+        df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
+        df['time'] = pd.to_datetime(df.index)
+        df_group = df.nlargest(2,'volume',keep='first')
+        df_group_max = float(df_group['high'].max())
+        diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
+        open1 =float(df_group.iloc[:1]['open'])
+        open2 =float(df_group.iloc[-1:]['open'])
+        close1=float(df_group.iloc[:1]['close'])
+        close2=float(df_group.iloc[-1:]['close'])
+        
+        if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
+            code_list.pop(i)        
+        else:
+            a.append(code_list[i])
+    except:
+        pass    
 
 df_final = df_tscode[df_tscode['symbol'].isin(a)]
 ts.close_apis(cons)
-print(df_final)
+# print(df_final.columns)
+print(df_final[['symbol', 'name', 'area', 'industry']].to_string(index=False))
 
 # # 市盈率
 # # get_today_all() 
@@ -238,19 +207,4 @@ print(df_final)
 # # 打印输出
 
 # # print(result_profit)
-
-# lg = bs.login()
-# code_list = data_3['code'].tolist()
-# for code in code_list:
-    # bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
-    # rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date='2021-03-01', end_date='2021-03-03',frequency="5", adjustflag="3")
-    # df = rs.get_data()    #获取股票5分钟数据
-    # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-    # df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
-    # df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
-    # df_group = df.nlargest(2,'volume',keep='first')
-    # df_group_max = float(df_group['high'].max())
-    # print(code,df_group_max)
-
-# bs.logout()
 ```
