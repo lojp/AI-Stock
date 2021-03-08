@@ -77,14 +77,16 @@ df_tscode = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol
 
 data = pro.daily(trade_date=today)
 data['code'] = data['ts_code'].str.split('.').str[0]
-data_3 = data[(data['high'] > data['pre_close']*1.093)& (data['open'] < data['close']) & (data['open'] < data['pre_close']*1.07) ]
+data_3 = data[(data['high'] > data['pre_close']*1.092)& (data['open'] < data['close']) & (data['close'] > data['pre_close']*1.065) & (data['pct_chg'] < 21)]
 
 # # # 0ts_code,1trade_date,2open,3high,4low,5close,6pre_close,7change,8pct_chg,9vol,10amount
 print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
 
+code_list = data_3['code'].tolist()
+a=[]
+b=[]
 
-# code_list = data_3['code'].tolist()
-# a=[]
+
 # lg = bs.login()
 # for i in range(len(code_list)):
     # if i >= len(code_list):
@@ -100,6 +102,7 @@ print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
         # df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
         # df_group = df.nlargest(2,'volume',keep='first')
         # df_group_max = float(df_group['high'].max())
+        # df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
         # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
         # open1 =float(df_group.iloc[:1]['open'])
         # open2 =float(df_group.iloc[-1:]['open'])
@@ -110,14 +113,13 @@ print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
             # code_list.pop(i)        
         # else:
             # a.append(code_list[i])
+            # b.append(df_group_maxvolume)
     # except:
         # pass    
 # bs.logout()
 
 
 
-code_list = data_3['code'].tolist()
-a=[]
 for i in range(len(code_list)):
     if i >= len(code_list):
         break
@@ -128,6 +130,7 @@ for i in range(len(code_list)):
         df['time'] = pd.to_datetime(df.index)
         df_group = df.nlargest(2,'volume',keep='first')
         df_group_max = float(df_group['high'].max())
+        df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
         diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
         open1 =float(df_group.iloc[:1]['open'])
         open2 =float(df_group.iloc[-1:]['open'])
@@ -138,13 +141,18 @@ for i in range(len(code_list)):
             code_list.pop(i)        
         else:
             a.append(code_list[i])
+            b.append(df_group_maxvolume)
     except:
         pass    
 
-df_final = df_tscode[df_tscode['symbol'].isin(a)]
+
+code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', '5min_volume_max'])
+df_final = code_volume.merge(df_tscode, on='symbol').merge(data_3[['code','pct_chg']],left_on='symbol', right_on='code').sort_values(by=['pct_chg'], ascending=False)
 ts.close_apis(cons)
 # print(df_final.columns)
-print(df_final[['symbol', 'name', 'area', 'industry']].to_string(index=False))
+print(df_final[['symbol', 'name', 'area', 'industry','5min_volume_max','pct_chg']].to_string(index=False))
+
+
 
 # # 市盈率
 # # get_today_all() 
