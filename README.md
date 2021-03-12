@@ -24,9 +24,9 @@ http://index.baidu.com/v2/index.html# \
 11, 通达信官网提供了所有券商行情的历史数据下载地址 \
 https://www.tdx.com.cn/article/alldata.html \
 可以使用pytdx打开，具体参考一下：\
-https://pytdx-docs.readthedocs.io/zh_CN/latest/pytdx_reader/ 
+https://pytdx-docs.readthedocs.io/zh_CN/latest/pytdx_reader/ \
 12, 利用通达信软件导出所有股票历史行情 \
-https://my.oschina.net/huhaicool/blog/3010947 
+https://my.oschina.net/huhaicool/blog/3010947 \
 
 ```
 import os 
