@@ -51,12 +51,15 @@ import operator
 import time
 import datetime
 import baostock as bs
+from opendatatools import stock
 from dateutil.relativedelta import relativedelta
 
 mypath = 'C:\\MyData\\Previous Analysis\\stock\\minsline\\'
 os.chdir(mypath)
 
 calendar_df = pd.read_hdf('calendar.h5', key='s')
+common_type ={'预增':1, '续盈':1, '略增':1, '略减':1, '预减':0.5, '续亏':-1, '首亏':-1, '扭亏':0.5}
+common_type_df = pd.DataFrame(common_type.items(), columns=['profitForcastType', 'epsTTM'])
 
 date_df = pd.to_datetime(calendar_df.tail(2)['cal_date'], format = '%Y%m%d')
 today = date_df.max().strftime('%Y%m%d')
@@ -65,6 +68,36 @@ t = datetime.datetime.strptime(today,'%Y%m%d').date()
 yesterday = date_df.min().strftime('%Y%m%d')
 yesterday_ymd = date_df.min().strftime('%Y-%m-%d')
 tomorrow_ymd = (t+relativedelta(days=1)).strftime('%Y-%m-%d')
+
+def check_eps(code_name):
+    rs_profit = bs.query_profit_data(code=code_name, year=2020, quarter=3)
+    profit_report = rs_profit.get_data()
+    b = profit_report[['statDate','epsTTM']]
+
+    rs_forecast = bs.query_forecast_report(code_name, start_date="2019-01-01", end_date = yesterday_ymd)
+    rs_forecast_list = []
+    while (rs_forecast.error_code == '0') & rs_forecast.next():
+        # 分页查询，将每页信息合并在一起
+        rs_forecast_list.append(rs_forecast.get_row_data())
+    result_forecast = pd.DataFrame(rs_forecast_list, columns=rs_forecast.fields)
+    result_forecast_new = result_forecast.merge(common_type_df, on='profitForcastType')
+    a = result_forecast_new[['profitForcastExpPubDate','epsTTM']]
+    a.columns=['statDate','epsTTM']
+
+    df = b.append(a)
+    df['statDate'] = pd.to_datetime(df['statDate'], format = '%Y-%m-%d', errors = 'ignore')
+    df['epsTTM'] = pd.DataFrame(df['epsTTM'], dtype=np.float)
+
+    latest_eps = float(df[df['statDate']==df['statDate'].max()]['epsTTM'])
+    return latest_eps
+
+def bscodemaker(code):
+    bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
+    return bs_code
+
+def stcodemaker(code):
+    st_code =  code + '.SH' if code[:1] == '6' else  code + '.SZ'
+    return st_code
 
 TOKEN = '0c98ac2886e4331d7120a91573d3d025ba2eec7c96bfac77f9b7153d'
 ts.set_token(TOKEN)
@@ -77,24 +110,24 @@ df_tscode = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol
 
 data = pro.daily(trade_date=today)
 data['code'] = data['ts_code'].str.split('.').str[0]
-data_3 = data[(data['high'] > data['pre_close']*1.092)& (data['open'] < data['close']) & (data['close'] > data['pre_close']*1.065) & (data['pct_chg'] < 21)]
-
+# data_3 = data[(data['high'] > data['pre_close']*1.092)& (data['open'] < data['close']) & (data['close'] > data['pre_close']*1.05) & (data['pct_chg'] < 21)]
+data_3 = data[(data['high'] > data['pre_close']*1.092)& (data['open'] < data['close']) & (data['pct_chg'] < 21) & (data['pct_chg'] >6)]
 # # # 0ts_code,1trade_date,2open,3high,4low,5close,6pre_close,7change,8pct_chg,9vol,10amount
 print("昨日涨幅大于9%的股票共有{}只".format(data_3.shape[0]))
 
 code_list = data_3['code'].tolist()
 a=[]
 b=[]
+lg = bs.login()
 
 
-# lg = bs.login()
 # for i in range(len(code_list)):
     # if i >= len(code_list):
         # break
     # try:
         # code = code_list[i]
         # highvalue = float(data_3[data_3['code']==code]['high'])        
-        # bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
+        # bs_code = bscodemaker(code)
         # rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
         # df = rs.get_data()     #获取股票5分钟数据
         # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
@@ -110,13 +143,15 @@ b=[]
         # close2=float(df_group.iloc[-1:]['close'])
         
         # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            # code_list.pop(i)        
+            # code_list.pop(i)  
+        # elif check_eps(bs_code)<0:  
+            # code_list.pop(i) 
         # else:
             # a.append(code_list[i])
             # b.append(df_group_maxvolume)
     # except:
         # pass    
-# bs.logout()
+
 
 
 
@@ -125,12 +160,13 @@ for i in range(len(code_list)):
         break
     try:
         code = code_list[i]
+        bs_code = bscodemaker(code)
         highvalue = float(data_3[data_3['code']==code]['high'])
         df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
         df['time'] = pd.to_datetime(df.index)
         df_group = df.nlargest(2,'volume',keep='first')
         df_group_max = float(df_group['high'].max())
-        df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
+        df_group_maxvolume = float(df_group['volume'].max())
         diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
         open1 =float(df_group.iloc[:1]['open'])
         open2 =float(df_group.iloc[-1:]['open'])
@@ -138,81 +174,26 @@ for i in range(len(code_list)):
         close2=float(df_group.iloc[-1:]['close'])
         
         if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            code_list.pop(i)        
+            code_list.pop(i)  
+        elif check_eps(bs_code)<0:  
+            code_list.pop(i) 
         else:
             a.append(code_list[i])
             b.append(df_group_maxvolume)
     except:
         pass    
 
-
+bs.logout()
 code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', '5min_volume_max'])
 df_final = code_volume.merge(df_tscode, on='symbol').merge(data_3[['code','pct_chg']],left_on='symbol', right_on='code').sort_values(by=['pct_chg'], ascending=False)
 ts.close_apis(cons)
-# print(df_final.columns)
-print(df_final[['symbol', 'name', 'area', 'industry','5min_volume_max','pct_chg']].to_string(index=False))
 
-
-
-# # 市盈率
-# # get_today_all() 
-
-
-# # # 查询当日分时
-# # # today_df = ts.get_today_ticks('002316')
-# # # print(today_df)
-
-
-# 查询历史五分钟数据
-# df = ts.get_hist_data('603042', ktype='5', start='2021-02-25', end='2021-02-27')
-# df['time'] = pd.to_datetime(df.index)
-# # df_group = df.nlargest(5,'volume')
-# print(df)
-
-# # 查询历史五分钟数据
-# # ['1ts_code', '2trade_time', '3open', '4close', '5high', '6low', '7vol', '8amount']
-# df_1 = ts.pro_bar(ts_code='603042.SH', freq='5min', adj='qfq',start_date='20210225', end_date='20210227')
-# # # # print(df_1.columns.values.tolist())
-# print(df_1.dtypes)
-
-# # 每日只能查询5次
-# code_list = data_3['code'].tolist()
-# a=[]
-# for i in range(len(code_list)):
-    # if i >= len(code_list):
-        # break
-    # try:
-        # code = code_list[i]
-        # highvalue = float(data_3[data_3['code']==code]['high'])
-        # df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
-        # df['time'] = pd.to_datetime(df.index)
-        # df_group = df.nlargest(2,'volume',keep='first')
-        # df_group_max = float(df_group['high'].max())
-        # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
-        # open1 =float(df_group.iloc[:1]['open'])
-        # open2 =float(df_group.iloc[-1:]['open'])
-        # close1=float(df_group.iloc[:1]['close'])
-        # close2=float(df_group.iloc[-1:]['close'])
-        
-        # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            # code_list.pop(i)        
-        # else:
-            # a.append(code_list[i])
-    # except:
-        # pass     
-
-
-# # # 查询5分钟
-#### 登陆系统 ####
-
-
-# result['time'] = pd.to_datetime(result['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-# # profit_list = []
-# rs_profit = bs.query_profit_data(code="sh.600000", year=2020, quarter=3)
-# while (rs_profit.error_code == '0') & rs_profit.next():
-    # profit_list.append(rs_profit.get_row_data())
-# result_profit = pd.DataFrame(profit_list, columns=rs_profit.fields)
-# # 打印输出
-
-# # print(result_profit)
+ori_name_list = df_final['code'].apply(lambda x : stcodemaker(x)).str.cat(sep=',')
+df_st, msg = stock.get_quote(ori_name_list)
+df_st['volume']=df_st['volume']/100
+df_st['code'] = df_st['symbol'].str.split('.').str[0]
+csv_df = df_final[['code', 'name', 'area', 'industry','5min_volume_max','pct_chg']].merge(df_st[['code','volume','percent']], on='code')
+csv_df['volumevs']=csv_df['volume']/csv_df['5min_volume_max']
+print(csv_df.sort_values(by=['volumevs'], ascending=False))
+csv_df.to_excel("output.xlsx",sheet_name='niugu') 
 ```
