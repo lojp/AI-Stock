@@ -27,6 +27,8 @@ https://www.tdx.com.cn/article/alldata.html \
 https://pytdx-docs.readthedocs.io/zh_CN/latest/pytdx_reader/ \
 12, 利用通达信软件导出所有股票历史行情 \
 https://my.oschina.net/huhaicool/blog/3010947 \
+13，实时获取数据 \
+https://rainx.gitbooks.io/pytdx/content/pytdx_hq.html \
 
 ```
 import os 
