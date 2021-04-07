@@ -55,12 +55,14 @@ import operator
 import time
 import datetime
 import baostock as bs
+from jqdatasdk import *
 from opendatatools import stock
 from dateutil.relativedelta import relativedelta
 
 mypath = 'C:\\MyData\\Previous Analysis\\stock\\minsline\\'
 os.chdir(mypath)
 
+auth('18829345691', '345691')
 calendar_df = pd.read_hdf('calendar.h5', key='s')
 common_type ={'预增':1, '续盈':1, '略增':1, '略减':1, '预减':0.5, '续亏':-1, '首亏':-1, '扭亏':0.5}
 common_type_df = pd.DataFrame(common_type.items(), columns=['profitForcastType', 'epsTTM'])
@@ -125,52 +127,21 @@ b=[]
 lg = bs.login()
 
 
-# for i in range(len(code_list)):
-    # if i >= len(code_list):
-        # break
-    # try:
-        # code = code_list[i]
-        # highvalue = float(data_3[data_3['code']==code]['high'])        
-        # bs_code = bscodemaker(code)
-        # rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
-        # df = rs.get_data()     #获取股票5分钟数据
-        # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-        # df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
-        # df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
-        # df_group = df.nlargest(2,'volume',keep='first')
-        # df_group_max = float(df_group['high'].max())
-        # df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
-        # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
-        # open1 =float(df_group.iloc[:1]['open'])
-        # open2 =float(df_group.iloc[-1:]['open'])
-        # close1=float(df_group.iloc[:1]['close'])
-        # close2=float(df_group.iloc[-1:]['close'])
-        
-        # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            # code_list.pop(i)  
-        # elif check_eps(bs_code)<0:  
-            # code_list.pop(i) 
-        # else:
-            # a.append(code_list[i])
-            # b.append(df_group_maxvolume)
-    # except:
-        # pass    
-
-
-
-
 for i in range(len(code_list)):
     if i >= len(code_list):
         break
     try:
         code = code_list[i]
+        highvalue = float(data_3[data_3['code']==code]['high'])        
         bs_code = bscodemaker(code)
-        highvalue = float(data_3[data_3['code']==code]['high'])
-        df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
-        df['time'] = pd.to_datetime(df.index)
+        rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
+        df = rs.get_data()     #获取股票5分钟数据
+        df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
+        df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
+        df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
         df_group = df.nlargest(2,'volume',keep='first')
         df_group_max = float(df_group['high'].max())
-        df_group_maxvolume = float(df_group['volume'].max())
+        df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
         diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
         open1 =float(df_group.iloc[:1]['open'])
         open2 =float(df_group.iloc[-1:]['open'])
@@ -187,6 +158,37 @@ for i in range(len(code_list)):
     except:
         pass    
 
+
+
+
+# for i in range(len(code_list)):
+    # if i >= len(code_list):
+        # break
+    # try:
+        # code = code_list[i]
+        # bs_code = bscodemaker(code)
+        # highvalue = float(data_3[data_3['code']==code]['high'])
+        # df = ts.get_hist_data(code, ktype='5', start=today_ymd, end=tomorrow_ymd)
+        # df['time'] = pd.to_datetime(df.index)
+        # df_group = df.nlargest(2,'volume',keep='first')
+        # df_group_max = float(df_group['high'].max())
+        # df_group_maxvolume = float(df_group['volume'].max())
+        # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
+        # open1 =float(df_group.iloc[:1]['open'])
+        # open2 =float(df_group.iloc[-1:]['open'])
+        # close1=float(df_group.iloc[:1]['close'])
+        # close2=float(df_group.iloc[-1:]['close'])
+        
+        # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
+            # code_list.pop(i)  
+        # elif check_eps(bs_code)<0:  
+            # code_list.pop(i) 
+        # else:
+            # a.append(code_list[i])
+            # b.append(df_group_maxvolume)
+    # except:
+        # pass    
+
 bs.logout()
 code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', '5min_volume_max'])
 df_final = code_volume.merge(df_tscode, on='symbol').merge(data_3[['code','pct_chg']],left_on='symbol', right_on='code').sort_values(by=['pct_chg'], ascending=False)
@@ -198,6 +200,19 @@ df_st['volume']=df_st['volume']/100
 df_st['code'] = df_st['symbol'].str.split('.').str[0]
 csv_df = df_final[['code', 'name', 'area', 'industry','5min_volume_max','pct_chg']].merge(df_st[['code','volume','percent']], on='code')
 csv_df['volumevs']=csv_df['volume']/csv_df['5min_volume_max']
-print(csv_df.sort_values(by=['volumevs'], ascending=False))
+print(csv_df.sort_values(by=['percent'], ascending=False))
 csv_df.to_excel("output.xlsx",sheet_name='niugu') 
+
+
+stock_list = csv_df['code'].apply(lambda x: (x[:6] + ".XSHG") if x.startswith('6') == True else (x[:6] + ".XSHE")).tolist()
+stock_call_auction_df = pd.DataFrame()
+for stock in stock_list:
+    stock_call_auction_df = stock_call_auction_df.append(get_call_auction(stock, start_date=tomorrow_ymd, end_date=tomorrow_ymd))
+
+stock_call_auction_df.rename({'code': 'scode', 'time': 'date', 'current': 'call_price', 'money': 'amount'}, axis='columns', inplace=True)
+stock_call_auction_df = stock_call_auction_df[['scode', 'date', 'call_price', 'amount']]
+stock_call_auction_df['scode'] = stock_call_auction_df['scode'].apply(lambda x: (x[:6] + '.SH') if str(x).endswith('XSHG') == True else (x[:6] + '.SZ'))
+
+print(stock_call_auction_df)
+print('竞价数据已更新')
 ```
