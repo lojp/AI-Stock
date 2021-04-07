@@ -5,6 +5,8 @@ Web Crawling the house information from stock website
 https://www.google.com/search?rlz=1C1CHBD_en&ei=ae2CXqvmJMbb9QPOhqawBQ&q=site%3Afile.finance.sina.com.cn++%E2%80%9C%E8%85%BE%E8%AE%AF%E2%80%9D&oq=site%3Afile.finance.sina.com.cn++%E2%80%9C%E8%85%BE%E8%AE%AF%E2%80%9D&gs_lcp=CgZwc3ktYWIQA1DSV1jSV2DGWmgAcAB4AIABd4gByQKSAQMxLjKYAQCgAQGqAQdnd3Mtd2l6&sclient=psy-ab&ved=0ahUKEwjrvoLZlMToAhXGbX0KHU6DCVYQ4dUDCAs&uact=5 \
 2, 搜东财 \
 https://www.google.com/search?rlz=1C1CHBD_en&ei=DfKCXvCrO4T0rQGxiaXYDA&q=site%3Adata.eastmoney.com+%22%E9%BB%84%E5%85%89%E8%A3%95%22&oq=site%3Adata.eastmoney.com+%22%E9%BB%84%E5%85%89%E8%A3%95%22&gs_lcp=CgZwc3ktYWIQA1DrOVixwQhg7sMIaBRwAHgAgAF6iAHREpIBBDkuMTSYAQCgAQGqAQdnd3Mtd2l6&sclient=psy-ab&ved=0ahUKEwiw5taPmcToAhUEeisKHbFECcsQ4dUDCAs&uact=5 \
+3，研报查询 \
+https://www.google.com.hk/search?q=site%3Apdf.dfcfw.com+%E6%B8%AF%E5%8F%A3%E9%9B%86%E8%A3%85%E7%AE%B1&rlz=1C1GCEU_zh-CNHK935HK935&oq=site%3Apdf.dfcfw.com+%E6%B8%AF%E5%8F%A3%E9%9B%86%E8%A3%85%E7%AE%B1&aqs=chrome..69i57j69i58.13146j0j15&sourceid=chrome&ie=UTF-8
 3, 深股查 \
 https://www.google.com/search?source=hp&ei=UMFUXpmAMcK1rQHjxZjABA&q=site%3Acninfo.com.cn+%E5%A4%A7%E5%9F%BA%E9%87%91%E4%BA%8C%E6%9C%9F&oq=site%3Acninfo.com.cn+%E5%A4%A7%E5%9F%BA%E9%87%91%E4%BA%8C%E6%9C%9F&gs_l=psy-ab.3...826.30811..31112...9.0..0.186.2837.0j25......0....1j2..gws-wiz.....0..0i131j0j0i10j0i131i10.A0EP-LBR8mg&ved=0ahUKEwiZ6IyWjOznAhXCWisKHeMiBkgQ4dUDCAY&uact=5 \
 4, 招股说明书 \
