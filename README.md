@@ -61,6 +61,9 @@ from jqdatasdk import *
 from opendatatools import stock
 from dateutil.relativedelta import relativedelta
 
+pd.set_option('display.unicode.ambiguous_as_wide', True)
+pd.set_option('display.unicode.east_asian_width', True)
+pd.set_option('display.max_rows', None)
 mypath = 'C:\\MyData\\Previous Analysis\\stock\\minsline\\'
 os.chdir(mypath)
 
@@ -75,6 +78,8 @@ today_ymd = date_df.max().strftime('%Y-%m-%d')
 t = datetime.datetime.strptime(today,'%Y%m%d').date()
 yesterday = date_df.min().strftime('%Y%m%d')
 yesterday_ymd = date_df.min().strftime('%Y-%m-%d')
+curr_today = date.today()
+curr_tomorrow_ymd = (curr_today+relativedelta(days=1)).strftime('%Y-%m-%d')
 tomorrow_ymd = (t+relativedelta(days=1)).strftime('%Y-%m-%d')
 
 def check_eps(code_name):
@@ -192,29 +197,33 @@ for i in range(len(code_list)):
         # pass    
 
 bs.logout()
-code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', '5min_volume_max'])
+code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', 'vol5mmax'])
 df_final = code_volume.merge(df_tscode, on='symbol').merge(data_3[['code','pct_chg']],left_on='symbol', right_on='code').sort_values(by=['pct_chg'], ascending=False)
 ts.close_apis(cons)
-
 ori_name_list = df_final['code'].apply(lambda x : stcodemaker(x)).str.cat(sep=',')
 df_st, msg = stock.get_quote(ori_name_list)
+
 df_st['volume']=df_st['volume']/100
 df_st['code'] = df_st['symbol'].str.split('.').str[0]
-csv_df = df_final[['code', 'name', 'area', 'industry','5min_volume_max','pct_chg']].merge(df_st[['code','volume','percent']], on='code')
-csv_df['volumevs']=csv_df['volume']/csv_df['5min_volume_max']
-print(csv_df.sort_values(by=['percent'], ascending=False))
+csv_df = df_final[['code', 'name', 'area', 'industry','vol5mmax','pct_chg']].merge(df_st[['code','volume','percent']], on='code')
+csv_df['volumevs']=csv_df['volume']/csv_df['vol5mmax']
+print(csv_df.sort_values(by=['volumevs'], ascending=False))
 csv_df.to_excel("output.xlsx",sheet_name='niugu') 
 
 
 stock_list = csv_df['code'].apply(lambda x: (x[:6] + ".XSHG") if x.startswith('6') == True else (x[:6] + ".XSHE")).tolist()
 stock_call_auction_df = pd.DataFrame()
 for stock in stock_list:
-    stock_call_auction_df = stock_call_auction_df.append(get_call_auction(stock, start_date=tomorrow_ymd, end_date=tomorrow_ymd))
+    stock_call_auction_df = stock_call_auction_df.append(get_call_auction(stock, start_date=tomorrow_ymd, end_date=curr_tomorrow_ymd))
 
-stock_call_auction_df.rename({'code': 'scode', 'time': 'date', 'current': 'call_price', 'money': 'amount'}, axis='columns', inplace=True)
-stock_call_auction_df = stock_call_auction_df[['scode', 'date', 'call_price', 'amount']]
-stock_call_auction_df['scode'] = stock_call_auction_df['scode'].apply(lambda x: (x[:6] + '.SH') if str(x).endswith('XSHG') == True else (x[:6] + '.SZ'))
+stock_call_auction_df= stock_call_auction_df[['code', 'time','volume', 'current', 'money']]
+stock_call_auction_df['volume25'] = stock_call_auction_df['volume']/100
+stock_call_auction_df['money25'] = stock_call_auction_df['money']/10000
+stock_call_auction_df['code'] = stock_call_auction_df['code'].str.slice(0,6)
+stock_call_auction_df = stock_call_auction_df.merge(data_3[['code','close']], on='code')
+stock_call_auction_df['percent25'] = stock_call_auction_df['current']*100/stock_call_auction_df['close']-100
 
-print(stock_call_auction_df)
-print('竞价数据已更新')
+auction_df = csv_df[['code', 'name', 'area', 'industry','pct_chg','vol5mmax','volume','percent']].merge(stock_call_auction_df[['code','percent25','volume25','money25']], on='code')
+auction_df = auction_df[['code', 'name', 'area', 'industry','money25','pct_chg','percent25','percent','vol5mmax','volume25','volume']]
+print(auction_df.sort_values(by=['money25'], ascending=False))
 ```
