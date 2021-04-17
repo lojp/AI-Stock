@@ -108,16 +108,22 @@ def bscodemaker(code):
     bs_code = 'sh.' + code if code[:1] == '6' else 'sz.' + code
     return bs_code
 
+def jqcodemaker(code):
+    jq_code =  code + '.XSHG' if code[:1] == '6' else code + '.XSHE'
+    return jq_code
+
 def stcodemaker(code):
     st_code =  code + '.SH' if code[:1] == '6' else  code + '.SZ'
     return st_code
 
-TOKEN = '0c98ac2886e4331d7120a91573d3d025ba2eec7c96bfac77f9b7153d'
+fields_list = ['date','open','high','low','close','volume','money']
+TOKEN = '058a81af5174d91a9c4c651e603168e91ddf35b26e6cadfa0d8f34bb'
 ts.set_token(TOKEN)
 pro = ts.pro_api()
 cons = ts.get_apis()
 
 df_tscode = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
+
 
 # # jihe_df = ts.tick('002316', conn=cons, date=today_ymd)
 
@@ -134,36 +140,36 @@ b=[]
 lg = bs.login()
 
 
-for i in range(len(code_list)):
-    if i >= len(code_list):
-        break
-    try:
-        code = code_list[i]
-        highvalue = float(data_3[data_3['code']==code]['high'])        
-        bs_code = bscodemaker(code)
-        rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
-        df = rs.get_data()     #获取股票5分钟数据
-        df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
-        df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
-        df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
-        df_group = df.nlargest(2,'volume',keep='first')
-        df_group_max = float(df_group['high'].max())
-        df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
-        diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
-        open1 =float(df_group.iloc[:1]['open'])
-        open2 =float(df_group.iloc[-1:]['open'])
-        close1=float(df_group.iloc[:1]['close'])
-        close2=float(df_group.iloc[-1:]['close'])
-        
-        if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
-            code_list.pop(i)  
-        elif check_eps(bs_code)<0:  
-            code_list.pop(i) 
-        else:
-            a.append(code_list[i])
-            b.append(df_group_maxvolume)
-    except:
-        pass    
+# for i in range(len(code_list)):
+    # if i >= len(code_list):
+        # break
+    # try:
+        # code = code_list[i]
+        # highvalue = float(data_3[data_3['code']==code]['high'])        
+        # bs_code = bscodemaker(code)
+        # rs = bs.query_history_k_data_plus(bs_code,"time,date,code,open,high,low,close,volume,amount",start_date=today_ymd, end_date=tomorrow_ymd,frequency="5", adjustflag="3")
+        # df = rs.get_data()     #
+        # df['time'] = pd.to_datetime(df['time'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
+        # df['date'] = pd.to_datetime(df['date'], format = '%Y-%m-%d', errors = 'ignore')
+        # df.iloc[:,6:] = pd.DataFrame(df.iloc[:,6:], dtype=np.float)#这个需要调整
+        # df_group = df.nlargest(2,'volume',keep='first')
+        # df_group_max = float(df_group['high'].max())
+        # df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
+        # diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
+        # open1 =float(df_group.iloc[:1]['open'])
+        # open2 =float(df_group.iloc[-1:]['open'])
+        # close1=float(df_group.iloc[:1]['close'])
+        # close2=float(df_group.iloc[-1:]['close'])
+        # print(code,diff,open1,open2,close1,close2)
+        # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
+            # code_list.pop(i)  
+        # elif check_eps(bs_code)<0:  
+            # code_list.pop(i) 
+        # else:
+            # a.append(code_list[i])
+            # b.append(df_group_maxvolume)
+    # except:
+        # pass    
 
 
 
@@ -185,7 +191,7 @@ for i in range(len(code_list)):
         # open2 =float(df_group.iloc[-1:]['open'])
         # close1=float(df_group.iloc[:1]['close'])
         # close2=float(df_group.iloc[-1:]['close'])
-        
+
         # if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
             # code_list.pop(i)  
         # elif check_eps(bs_code)<0:  
@@ -195,6 +201,36 @@ for i in range(len(code_list)):
             # b.append(df_group_maxvolume)
     # except:
         # pass    
+
+
+for i in range(len(code_list)):
+    if i >= len(code_list):
+        break
+    try:
+        code = code_list[i]
+        jq_code = jqcodemaker(code)
+        bs_code = bscodemaker(code)
+        highvalue = float(data_3[data_3['code']==code]['high'])
+        df = get_bars(jq_code, 48, unit='5m',fields=fields_list,include_now=False,end_dt=tomorrow_ymd)
+        df['time'] = pd.to_datetime(df['date'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
+        df_group = df.nlargest(2,'volume',keep='first')
+        df_group_max = float(df_group['high'].max())
+        df_group_maxvolume = float(df_group['volume'].max())
+        diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
+        open1 =float(df_group.iloc[:1]['open'])
+        open2 =float(df_group.iloc[-1:]['open'])
+        close1=float(df_group.iloc[:1]['close'])
+        close2=float(df_group.iloc[-1:]['close'])
+        if diff != 300 or open1 > close1 or open2 > close2 or highvalue != df_group_max:
+            code_list.pop(i)
+        elif check_eps(bs_code)<0:
+            code_list.pop(i)
+        else:
+            a.append(code_list[i])
+            b.append(df_group_maxvolume)
+    except:
+        pass
+
 
 bs.logout()
 code_volume = pd.DataFrame(list(zip(a, b)), columns=['symbol', 'vol5mmax'])
