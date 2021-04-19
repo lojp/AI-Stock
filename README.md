@@ -215,7 +215,7 @@ for i in range(len(code_list)):
         df['time'] = pd.to_datetime(df['date'], format = '%Y%m%d%H%M%S%f', errors = 'ignore')
         df_group = df.nlargest(2,'volume',keep='first')
         df_group_max = float(df_group['high'].max())
-        df_group_maxvolume = float(df_group['volume'].max())
+        df_group_maxvolume = round(float(df_group['volume'].max())/100,0)
         diff = (df_group['time'].max()-df_group['time'].min()).total_seconds()
         open1 =float(df_group.iloc[:1]['open'])
         open2 =float(df_group.iloc[-1:]['open'])
@@ -257,9 +257,10 @@ stock_call_auction_df['volume25'] = stock_call_auction_df['volume']/100
 stock_call_auction_df['money25'] = stock_call_auction_df['money']/10000
 stock_call_auction_df['code'] = stock_call_auction_df['code'].str.slice(0,6)
 stock_call_auction_df = stock_call_auction_df.merge(data_3[['code','close']], on='code')
-stock_call_auction_df['percent25'] = stock_call_auction_df['current']*100/stock_call_auction_df['close']-100
+stock_call_auction_df['percent25'] = round(stock_call_auction_df['current']*100/stock_call_auction_df['close']-100,3)
 
 auction_df = csv_df[['code', 'name', 'area', 'industry','pct_chg','vol5mmax','volume','percent']].merge(stock_call_auction_df[['code','percent25','volume25','money25']], on='code')
 auction_df = auction_df[['code', 'name', 'area', 'industry','money25','pct_chg','percent25','percent','vol5mmax','volume25','volume']]
 print(auction_df.sort_values(by=['money25'], ascending=False))
+
 ```
