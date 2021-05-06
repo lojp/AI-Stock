@@ -49,6 +49,48 @@ if(len(df)>10):  #计算每只股票 10天以来的涨跌幅（大约2周）
 ```
 
 ```
+import numpy as np  
+import pandas as pd  
+import tushare as ts  
+import datetime  
+import time  
+import tushare as ts  
+import os  
+import matplotlib  
+import matplotlib.pyplot as plt  
+import operator
+from dateutil.relativedelta import relativedelta
+
+mypath = 'C:\\MyData\\Previous Analysis\\stock\\minsline\\'
+os.chdir(mypath)
+
+today = datetime.datetime.now().strftime('%Y%m%d')
+today_ymd = datetime.datetime.now().strftime('%Y-%m-%d')
+t = datetime.datetime.strptime(today,'%Y%m%d').date()
+yesterday = (t-relativedelta(days=1)).strftime('%Y%m%d')
+yesterday_ymd = (t-relativedelta(days=1)).strftime('%Y-%m-%d')
+tomorrow_ymd = (t+relativedelta(days=1)).strftime('%Y-%m-%d')
+mytime = time.localtime()
+
+
+
+TOKEN = '0c98ac2886e4331d7120a91573d3d025ba2eec7c96bfac77f9b7153d'
+ts.set_token(TOKEN)
+pro = ts.pro_api()
+cons = ts.get_apis()
+
+if mytime.tm_hour < 12:
+    my_end_date=yesterday
+else:
+    my_end_date=today
+
+df = pro.trade_cal(exchange='', start_date='20180101', end_date=my_end_date)
+calendar_df = df[df['is_open']==1]
+calendar_df.to_hdf('calendar.h5', key='s')
+print(calendar_df)
+```
+
+```
 import pandas as pd
 import tushare as ts
 import os
